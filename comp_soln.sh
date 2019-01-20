@@ -39,6 +39,14 @@ then tests="$1"
 else tests="$3"
 fi
 
+num_tests=0
+
+while read p; do {
+    if [[ ${p:0:1} == "#" ]]; then continue; fi
+    if [[ -z "$p" ]]; then continue; fi
+    num_tests=$((num_tests + 1))
+}; done < "$tests"
+
 while read p
 do {
     if [[ ${p:0:1} == "#" ]]; then continue; fi
@@ -57,7 +65,7 @@ do {
     fi
 
     total=$((total+1))
-    echo -n "Running Test #$total: $to_test $args ... "
+    echo -n "Running Test $total of $num_tests: $to_test $args ... "
     actual=$(eval "$to_test $args" 2>&1) || true
     expected=$(eval "$solution $args" 2>&1) || true
 
