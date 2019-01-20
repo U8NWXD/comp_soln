@@ -57,7 +57,7 @@ do {
     fi
 
     total=$((total+1))
-    echo -n "Testing $to_test $args ... "
+    echo -n "Running Test #$total: $to_test $args ... "
     actual=$(eval "$to_test $args" 2>&1) || true
     expected=$(eval "$solution $args" 2>&1) || true
 
