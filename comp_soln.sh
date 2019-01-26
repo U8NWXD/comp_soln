@@ -6,6 +6,8 @@
 
 set -e
 
+run_valgrind_tests=false
+
 black="$(tput setaf 0)"
 red="$(tput setaf 1)"
 green="$(tput setaf 2)"
@@ -40,7 +42,19 @@ comp_out() {
     }; fi
 }
 
-failed=0
+# Usage: test_exec
+# Errors stored in `valgrind_errors`
+test_valgrind() {
+    test_exec=$1
+    valgrind_errors=$(valgrind -q "$test_exec" 2>&1 > /dev/null)
+    if [[ -z "$valgrind_errors" ]]; then {
+        return 0;
+    } else {
+        return 1;
+    }; fi
+}
+
+num_failed=0
 total=0
 
 if (($# != 3 && $# != 1)); then {
@@ -80,14 +94,16 @@ do {
     }
     fi
 
+    failed=false
+
     total=$((total+1))
-    echo -n "Running Test $total of $num_tests: $to_test $args ... "
+    echo -n "[$total of $num_tests] Comparing Output: $to_test $args ... "
 
     if comp_out "$to_test" "$solution" "$args"
     then {
         print_color "$green" "OK"
     } else {
-        failed=$((failed+1))
+        failed=true
         print_color "$red" "FAILED"
         echo "Expected:"
         echo "$expected"
@@ -95,7 +111,24 @@ do {
         echo "$actual"
     }
     fi
+
+    if $run_valgrind_tests; then {
+        echo -n "[$total of $num_tests] Running Valgrind: $to_test $args ... "
+
+        if test_valgrind "$to_test"; then {
+            print_color "$green" "OK"
+        } else {
+            failed=true
+            print_color "$red" "FAILED"
+            echo "Valgrind Errprs:"
+            echo "$valgrind_errors"
+        }; fi
+    }; fi
+
+    if $failed; then {
+        num_failed=$((num_failed+1))
+    }; fi
 }
 done < "$tests"
-echo "Failed $failed tests of $total"
-if (($failed == 0)); then echo "ALL TESTS PASSED"; fi
+echo "Failed $num_failed tests of $total"
+if (($num_failed == 0)); then echo "ALL TESTS PASSED"; fi
