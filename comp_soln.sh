@@ -24,6 +24,22 @@ print_color() {
     echo "${color}$text${endColor}"
 }
 
+# Usage: comp_out test_exec soln_exec args
+# Variables `actual` and `expected` will hold testing and solution outputs
+comp_out() {
+    test_exec=$1
+    soln_exec=$2
+    args=$3
+    actual=$(eval "$test_exec $args" 2>&1) || true
+    expected=$(eval "$soln_exec $args" 2>&1) || true
+
+    if diff -q <(echo "$actual") <(echo "$expected") > /dev/null; then {
+        return 0
+    } else {
+        return 1
+    }; fi
+}
+
 failed=0
 total=0
 
@@ -66,10 +82,8 @@ do {
 
     total=$((total+1))
     echo -n "Running Test $total of $num_tests: $to_test $args ... "
-    actual=$(eval "$to_test $args" 2>&1) || true
-    expected=$(eval "$solution $args" 2>&1) || true
 
-    if diff <(echo "$actual") <(echo "$expected")
+    if comp_out "$to_test" "$solution" "$args"
     then {
         print_color "$green" "OK"
     } else {
