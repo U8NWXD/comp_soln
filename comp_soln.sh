@@ -14,6 +14,7 @@ blue="$(tput setaf 4)"
 magenta="$(tput setaf 5)"
 cyan="$(tput setaf 6)"
 white="$(tput setaf 7)"
+gray="$(tput setaf 245)"
 
 endColor="$(tput sgr0)"
 
@@ -137,9 +138,9 @@ do {
         failed=true
         print_color "$red" "FAILED"
         echo "Expected:"
-        echo "$expected"
+        print_color "$gray" "$expected"
         echo "Actual:"
-        echo "$actual"
+        print_color "$gray" "$actual"
     }
     fi
 
@@ -151,8 +152,8 @@ do {
         } else {
             failed=true
             print_color "$red" "FAILED"
-            echo "Valgrind Errprs:"
-            echo "$valgrind_errors"
+            echo "Valgrind Errors:"
+            print_color "$gray" "$valgrind_errors"
         }; fi
     }; fi
 
