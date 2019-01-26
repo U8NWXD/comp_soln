@@ -6,8 +6,6 @@
 
 set -e
 
-run_valgrind_tests=false
-
 black="$(tput setaf 0)"
 red="$(tput setaf 1)"
 green="$(tput setaf 2)"
@@ -54,12 +52,45 @@ test_valgrind() {
     }; fi
 }
 
+run_valgrind_tests=false
+
+# Parse arguments
+# SOURCE: http://wiki.bash-hackers.org/howto/getopts_tutorial
+while getopts ":vh" opt; do
+  case $opt in
+    v)
+      run_valgrind_tests=true
+      ;;
+    h)
+      echo "Usage: ./comp_soln.sh [-v] to_test solution tests"
+      echo "       ./comp_soln.sh [-v] tests"
+      echo "-v checks that valgrind finds no errors"
+      echo "-h displays this help text"
+      exit 0
+      ;;
+    \?)
+      echo "Invalid Option: -$OPTARG"
+      echo "Run ./comp_soln.sh -h for help"
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument"
+      echo "Run ./comp_soln.sh -h for help"
+      exit 1
+      ;;
+  esac
+done
+
 num_failed=0
 total=0
 
+shift $(($OPTIND-1))
+
 if (($# != 3 && $# != 1)); then {
-    echo "Usage: ./run_tests.sh to_test solution tests"
-    echo "       ./run_tests.sh tests"
+    echo "Usage: ./comp_soln.sh [-v] to_test solution tests"
+    echo "       ./comp_soln.sh [-v] tests"
+    echo "-v checks that valgrind finds no errors"
+    echo "-h displays this help text"
     exit 1
 }
 fi
