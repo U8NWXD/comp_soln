@@ -163,3 +163,5 @@ do {
 done < "$tests"
 echo "Failed $num_failed tests of $total"
 if (($num_failed == 0)); then echo "ALL TESTS PASSED"; fi
+
+exit 0
