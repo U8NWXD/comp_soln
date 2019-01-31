@@ -41,11 +41,12 @@ comp_out() {
     }; fi
 }
 
-# Usage: test_exec
+# Usage: test_exec args
 # Errors stored in `valgrind_errors`
 test_valgrind() {
     test_exec=$1
-    valgrind_errors=$(valgrind -q "$test_exec" 2>&1 > /dev/null)
+    args=$2
+    valgrind_errors=$(valgrind -q "$test_exec" "$args" 2>&1 > /dev/null)
     if [[ -z "$valgrind_errors" ]]; then {
         return 0;
     } else {
@@ -101,16 +102,24 @@ then tests="$1"
 else tests="$3"
 fi
 
-num_tests=0
-
-while read p; do {
+# HELP FROM: https://stackoverflow.com/a/20295018
+# HELP FROM:
+# https://peniwize.wordpress.com/2011/04/09/how-to-read-all-lines-of-a-file-into-a-bash-array/
+# HELP FROM: https://www.linuxjournal.com/content/bash-arrays
+test_lines=()
+i=0
+while IFS= read -r p; do
     if [[ ${p:0:1} == "#" ]]; then continue; fi
     if [[ -z "$p" ]]; then continue; fi
-    num_tests=$((num_tests + 1))
-}; done < "$tests"
+    test_lines[i]="$p"
+    ((++i))
+done < "$tests"
 
-while read p
-do {
+num_tests=${#test_lines[*]}
+test_num=0
+
+for p in "${test_lines[@]}"; do {
+    ((++test_num))
     if [[ ${p:0:1} == "#" ]]; then continue; fi
     if [[ -z "$p" ]]; then continue; fi
     if (($# == 1))
@@ -128,8 +137,7 @@ do {
 
     failed=false
 
-    total=$((total+1))
-    echo -n "[$total of $num_tests] Comparing Output: $to_test $args ... "
+    echo -n "[$test_num of $num_tests] Comparing Output: $to_test $args ... "
 
     if comp_out "$to_test" "$solution" "$args"
     then {
@@ -145,9 +153,9 @@ do {
     fi
 
     if $run_valgrind_tests; then {
-        echo -n "[$total of $num_tests] Running Valgrind: $to_test $args ... "
+        echo -n "[$test_num of $num_tests] Running Valgrind: $to_test $args ... "
 
-        if test_valgrind "$to_test"; then {
+        if test_valgrind "$to_test" "$args"; then {
             print_color "$green" "OK"
         } else {
             failed=true
@@ -160,9 +168,9 @@ do {
     if $failed; then {
         num_failed=$((num_failed+1))
     }; fi
-}
-done < "$tests"
-echo "Failed $num_failed tests of $total"
+}; done
+echo "Failed $num_failed tests of $num_tests"
 if (($num_failed == 0)); then echo "ALL TESTS PASSED"; fi
 
 exit 0
+
