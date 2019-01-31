@@ -46,7 +46,7 @@ comp_out() {
 test_valgrind() {
     test_exec=$1
     args=$2
-    valgrind_errors=$(valgrind -q "$test_exec" "$args" 2>&1 > /dev/null)
+    valgrind_errors=$(valgrind -q --leak-check=full --show-leak-kinds=all "$test_exec" "$args" 2>&1 > /dev/null)
     if [[ -z "$valgrind_errors" ]]; then {
         return 0;
     } else {
