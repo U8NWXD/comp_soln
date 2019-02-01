@@ -55,6 +55,31 @@ test_valgrind() {
 }
 
 # Usage: test_exec soln_exec args
+# Output stored in test_out, soln_out, and factor (test_out / soln_out)
+test_memory_usage() {
+    test_exec=$1
+    soln_exec=$2
+    args=$3
+
+    test_out=$(valgrind $test_exec $args 2>&1 | grep "total heap usage" | grep -o "[0-9,]* bytes allocated$" | grep -o "[0-9,]*")
+    test_out=${test_out//,/}
+    soln_out=$(valgrind $soln_exec $args 2>&1 | grep "total heap usage" | grep -o "[0-9,]* bytes allocated$" | grep -o "[0-9,]*")
+    soln_out=${soln_out//,/}
+
+    if [[ soln_out -eq 0 ]]; then {
+        soln_out=1
+    }; fi
+
+    factor=$((test_out / soln_out))
+
+    if [[ factor -gt 3 ]]; then {
+        return 1;
+    } else {
+        return 0;
+    }; fi
+}
+
+# Usage: test_exec soln_exec args
 # Output stored in test_time, soln_time, and factor (test / soln)
 test_runtime() {
     test_exec=$1
@@ -88,10 +113,11 @@ test_runtime() {
 
 run_valgrind_tests=false
 check_runtime=false
+check_memory_usage=false
 
 # Parse arguments
 # SOURCE: http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":vth" opt; do
+while getopts ":vtmh" opt; do
   case $opt in
     v)
       run_valgrind_tests=true
@@ -99,11 +125,15 @@ while getopts ":vth" opt; do
     t)
       check_runtime=true
       ;;
+    m)
+      check_memory_usage=true
+      ;;
     h)
-      echo "Usage: ./comp_soln.sh [-vt] to_test solution tests"
-      echo "       ./comp_soln.sh [-v] tests"
+      echo "Usage: ./comp_soln.sh [-vtmh] to_test solution tests"
+      echo "       ./comp_soln.sh [-vtmh] tests"
       echo "-v checks that valgrind finds no errors"
       echo "-t checks that test runs at most 3x slower than solution"
+      echo "-m checks that test uses at most 3x as much memory as solution"
       echo "-h displays this help text"
       exit 0
       ;;
@@ -126,9 +156,11 @@ total=0
 shift $(($OPTIND-1))
 
 if (($# != 3 && $# != 1)); then {
-    echo "Usage: ./comp_soln.sh [-v] to_test solution tests"
-    echo "       ./comp_soln.sh [-v] tests"
+    echo "Usage: ./comp_soln.sh [-vtmh] to_test solution tests"
+    echo "       ./comp_soln.sh [-vtmh] tests"
     echo "-v checks that valgrind finds no errors"
+    echo "-t checks that test runs at most 3x slower than solution"
+    echo "-m checks that test uses at most 3x as much memory as solution"
     echo "-h displays this help text"
     exit 1
 }
@@ -210,7 +242,20 @@ for p in "${test_lines[@]}"; do {
             failed=true
             print_color "$red" "FAILED"
             print_color "$gray" "Test Time: $test_time"
-            print_color "$gray" "Solution Tiime: $soln_time"
+            print_color "$gray" "Solution Time: $soln_time"
+            print_color "$gray" "Factor (test/soln): $factor"
+        }; fi
+    }; fi
+
+    if $check_memory_usage; then {
+        echo -n "[$test_num of $num_tests] Checking Memory Usage: $to_test $args ... "
+        if test_memory_usage "$to_test" "$solution" "$args"; then {
+            print_color "$green" "OK"
+        } else {
+            failed=true
+            print_color "$red" "FAILED"
+            print_color "$gray" "Test Usage: $test_out"
+            print_color "$gray" "Solution usage: $soln_out"
             print_color "$gray" "Factor (test/soln): $factor"
         }; fi
     }; fi
