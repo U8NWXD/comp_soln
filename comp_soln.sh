@@ -87,11 +87,11 @@ test_runtime() {
     args=$3
 
     test_start="$(date +%s)"
-    eval "$test_exec $args" 2>&1 > /dev/null
+    eval "$test_exec $args" > /dev/null 2>&1
     test_end="$(date +%s)"
 
     soln_start="$(date +%s)"
-    eval "$soln_exec $args" 2>&1 > /dev/null
+    eval "$soln_exec $args" > /dev/null 2>&1
     soln_end="$(date +%s)"
 
     test_time=$((test_end - test_start))
